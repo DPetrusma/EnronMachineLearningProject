@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=windows-1252"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 5.2.6.2 (Windows)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="2017-06-17T07:35:39.201000000"/>
+	<style type="text/css">
+		@page { margin: 2cm }
+		p { margin-bottom: 0.25cm; line-height: 120% }
+		a:link { so-language: zxx }
+	</style>
+</head>
+<body lang="en-AU" dir="ltr">
+<ol>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The goal of
+	this project is to identify persons of interest (POIs) in the Enron
+	fraud case based on publicly available financial details and the
+	number of emails sent to and from each person. As there are many
+	numerical values for each person (19 in total), discovering which
+	are important and which are secondary is a perfect problem for
+	machine learning algorithms. They can quickly explore the features,
+	keeping those that differentiate well between POIs and non-POIs and
+	discarding the rest to maximise predictive power and minimise
+	over-fitting.</p>
+	<p style="margin-bottom: 0cm; line-height: 100%">The only outlier
+	that I decided to take out was the one identified in the training
+	exercises &ndash; the &ldquo;TOTAL&rdquo; data point, as it is
+	obviously a quirk of the spreadsheet data and gives us no useful
+	information. I considered removing &quot;MARTIN AMANDA K&quot; due
+	to the extremely high value of &ldquo;long_term_incentive&rdquo;,
+	and this did improve my score, but just because a data point doesn&rsquo;t
+	fit nicely doesn&rsquo;t mean it should be ignore. Her results
+	provide meaningful information and show that someone could have
+	earned an extremely large bonus without being a POI.</p>
+	<p style="margin-bottom: 0cm; line-height: 100%">The difficult part
+	it going to be building a good algorithm with such a limited data
+	set &ndash; there are only 145 data points (excluding the 1 &ldquo;TOTAL&rdquo;
+	outlier that was removed).</p>
+</ol>
+<ol start="2">
+	<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	The features I ended up using were salary, total_payments, bonus,
+	deferred_income, total_stock_value, exercised_stock_options,
+	long_term_incentive, director_fees, from_poi_to_this_person,
+	from_this_person_to_poi. Initially, my method was to include all
+	features and implement Principal Component Analysis (PCA) in a grid
+	search to optimise the number of features to keep. However, I
+	discovered that I could improve the result by manually removing
+	features before the PCA, and so I simply removed them one by one,
+	and if the F1 score decreased, I added the feature back in. Another
+	feature selection method I tried was removing those with more than
+	70% of the values as NaN. However, this did not improve my result,
+	and I realised that the fact that a certain feature had many NaNs
+	may have been a good predictive factor. Scaling was included, as I
+	think that to use financial and email features like salary and
+	number of emails sent together, a lack of feature scaling means the
+	far higher order of magnitude of a salary will overwhelm the email
+	numbers.</p>
+	<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	The feature that I created and tried to use was
+	&ldquo;salary_proportion_of_total_payments&rdquo;, which was the
+	salary divided by the total payments. My thinking was that someone
+	who received relatively large non-salary payments may have been in a
+	different position that someone who did not. However, this feature
+	did not improve the score and so I dropped it.</p>
+	<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	As I used PCA, there were no real individual feature importance
+	scores, and since I created a pipeline including scaling, PCA, the
+	classifier, and a stratified shuffle split for training and testing,
+	I wasn&rsquo;t sure how to then extract the most important
+	parameters from the PCA.</p>
+	<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	The algorithm I ended up using was Naive Bayes as it seemed to
+	provide the greatest F1 score from the testing code. I also tried an
+	SVM, and a Random Forest Classifier. The F1 score for my Naive Bayes
+	was 0.46229, for the SVM it was 0.21347, and for the Random Forest
+	it was 0.26365. This surprised me, as the SVMs and Random Forest
+	Classifiers allow far more parameter tuning which I did with a Grid
+	Search, yet even after running for 15+ minutes the best Random
+	Forest performance was significantly worse than a simple Naive
+	Bayes. All of these used Feature Scaling and PCA.</p>
+	<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	The tuning that I performed started out as a Grid Search with the
+	PCA and then then the Random Forest/SVM, with a range of values
+	taken from the previous lessons. As mentioned above, though, even
+	with this tuning the algorithms seemed to perform far worse than the
+	simple Naive Bayes with no parameters to tune. The only &ldquo;tuning&rdquo;
+	I did was to take out some features one by one in an attempt to
+	improve the F1 score, even though my original grid search included a
+	variable number of features to select for the PCA.</p>
+	<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	For the classifiers I did tune, I included &ldquo;min_samples_split&rdquo;,
+	&ldquo;min_samples_leaf&rdquo;, and &ldquo;criterion&rdquo; for the
+	Random Forest, and for the SVM I included &ldquo;gamma&rdquo; and
+	&ldquo;C&rdquo;.</p>
+	<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	Validation is the process of checking the results of the classifier
+	against a different set of data that it was trained on. The classic
+	mistake is training, validating and testing on the same set of data,
+	and so to avoid that I made sure to use a Stratified Shuffle Split
+	in my initial grid searches and classification reports. I also used
+	the tester.py code to measure the performance of my classifiers
+	which uses a 1000-fold Stratified Shuffle Split to randomise the
+	small amount of data into train and test sets.</p>
+	<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	For my best-performing Naive Bayes, the average precision (as
+	measured by the tester function) was 0.47639 and the average recall
+	was 0.44900. This means that out of the 1,000 repetitions of the
+	stratified shuffle split with a testing size of 10%, about 48% of
+	our predicted POIs were actually POIs, and there was about a 45%
+	chance of labelling a POI as a POI, i.e., about 55% of the POIs were
+	not flagged as a POI. These numbers are much more useful than
+	accuracy due to the skewed nature of the label; since most points
+	are non-POI, we could easily label them all non-POI an achieve a
+	good overall accuracy score.</p>
+	<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+	On the surface, this does seem rather low to me, but I understand
+	that with such a small data set (145 points), even being clever
+	about training and testing may not yield very high results for these
+	metrics as the variance is too high.</p>
+</ol>
+</body>
+</html>
